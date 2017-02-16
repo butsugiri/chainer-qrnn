@@ -14,13 +14,11 @@ import chainer.functions as F
 from chainer.functions import sigmoid_cross_entropy, binary_accuracy
 from chainer.training import extensions
 
-from net.model import QRNN
+from net.model import QRNNAutoEncoder
 from utils import convert
 from data_processor import DataProcessor
 from chainer.dataset import concat_examples
 from functools import partial
-
-
 
 
 def main(args):
@@ -35,7 +33,7 @@ def main(args):
     vocab = dp.vocab
     pad_idx = dp.pad_value
     embed_dim = args.dim
-    model = QRNN(n_vocab=len(vocab), embed_dim=embed_dim, pad_idx=pad_idx)  # ABCNNはoutput = 50固定らしいが．
+    model = QRNNAutoEncoder(n_vocab=len(vocab), embed_dim=embed_dim)  # ABCNNはoutput = 50固定らしいが．
 
     if args.gpu >= 0:
         cuda.get_device(args.gpu).use()
@@ -94,22 +92,11 @@ if __name__ == '__main__':
     parser.set_defaults(glove=False)
     parser.add_argument('--glove-path', dest='glove_path', type=str,
                         default="../../disco_parse/data/glove_model/glove.6B.100d.txt", help='Path to pretrained glove vector')
-    parser.add_argument('--word2vec', action='store_true',
-                        help='Use word2vec vector?')
-    parser.set_defaults(word2vec=False)
-    parser.add_argument('--word2vec-path', dest='word2vec_path', type=str,
-                        default="../../disco_parse/data/glove_model/glove.6B.100d.txt", help='Path to pretrained word2vec vector')
     parser.add_argument('--test', action='store_true',
                         help='Use tiny dataset for quick test')
     parser.set_defaults(test=False)
     parser.add_argument('--decay',  type=float,
-                        default=0.0002, help='Weight decay rate')
-    parser.add_argument('--vocab',  type=str,
-                        default="../work/word2vec_vocab.txt", help='Vocabulary file')
-    parser.add_argument('--lr',  type=float,
-                        default=0.08, help='Learning rate')
-    parser.add_argument('--use-test-data', dest="use_test_data", action='store_true',
-                        help='Use test data instead of dev data')
+                        default=0.0004, help='Weight decay rate')
     parser.set_defaults(use_test_data=False)
     args = parser.parse_args()
 
