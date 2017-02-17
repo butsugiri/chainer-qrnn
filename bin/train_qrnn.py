@@ -1,10 +1,5 @@
-# coding: utf-8
-import os
-import json
-import sys
+# -*- coding: utf-8 -*-
 import argparse
-from datetime import datetime
-import numpy as np
 
 import chainer
 from chainer import reporter, training, cuda
@@ -40,6 +35,7 @@ def main(args):
     optimizer = O.AdaGrad(lr=args.lr)
     optimizer.setup(model)
 
+    # create iterators from loaded data
     train_iter = chainer.iterators.SerialIterator(train_data, args.batchsize, shuffle=True)
     dev_iter = chainer.iterators.SerialIterator(dev_data, args.batchsize, repeat=False)
 

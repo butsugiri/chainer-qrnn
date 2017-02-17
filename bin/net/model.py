@@ -9,17 +9,16 @@ from chainer import Link, Chain
 from chainer import reporter
 
 """
-TODO
-* Evaluation for each epoch
-* My own extension that tests autoconding
-* implement "zoneout"
+TODO:
+* Implement Language model
+    * Mikolov's PTB
+    * Follow train_ptb.py
+* Implement "zoneout"
+* Kernel size other than k==2
 """
 
 
 class QRNNLayer(Chain):
-    """
-    trying to follow NStepLSTM's API
-    """
     def __init__(self, in_size, out_size, conv_width=2):
         self.in_size = in_size
         self.out_size = out_size
@@ -35,6 +34,10 @@ class QRNNLayer(Chain):
             raise NotImplementedError
 
     def __call__(self, c, xs):
+        """
+        The API is (almost) equivalent to NStepLSTM's.
+        Just pass the list of variables, and they get encoded.
+        """
         inds = self.xp.argsort([-len(x.data) for x in xs]).astype('i')
         xs = [xs[i] for i in inds]
         pool_in = self.convolution(xs)
@@ -60,8 +63,8 @@ class QRNNLayer(Chain):
 
     def pooling(self, c, xs):
         """
-        fo-pooling
-        seemingly the best option when compared to ifo/f-pooling
+        implement fo-pooling
+        (seemingly the best option when compared to ifo/f-pooling)
         """
         c_prev = c
         hs = []
@@ -93,6 +96,5 @@ class QRNNAutoEncoder(Chain):
         xs = args
         emx = [self.embed(x) for x in xs]
         hs = self.qrnn(c=None, xs=emx)
-        # print([h.shape for h in hs])
         ys = [self.l1(h) for h in hs]
         return ys

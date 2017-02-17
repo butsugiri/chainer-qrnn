@@ -17,7 +17,6 @@ class DataProcessor(object):
         self.test_run = test_run # if true, use tiny datasets for quick test
 
         self.vocab = defaultdict(lambda: len(self.vocab))
-        self.pad_value = self.vocab["<-PAD->"]
         self.vocab["<-UNK->"]
 
     def prepare_dataset(self):
@@ -25,12 +24,12 @@ class DataProcessor(object):
         print("loading dataset...", end='', flush=True, file=sys.stderr)
         if self.test_run:
             print("...preparing tiny dataset for quick test...", end='', flush=True, file=sys.stderr)
-        self.train_data = self.load_dataset("train")
-        self.dev_data = self.load_dataset("dev")
-        self.test_data = self.load_dataset("test")
+        self.train_data = self._load_dataset("train")
+        self.dev_data = self._load_dataset("dev")
+        self.test_data = self._load_dataset("test")
         print("done", flush=True, file=sys.stderr)
 
-    def load_dataset(self, _type):
+    def _load_dataset(self, _type):
         if _type == "train":
             path = self.train_data_path
         elif _type == "dev":
