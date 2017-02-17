@@ -16,7 +16,7 @@ from chainer.training import extensions
 from net.model import QRNNAutoEncoder
 from utils import convert
 from data_processor import DataProcessor
-from classifier import Classifier
+from classifier import RecNetClassifier
 
 
 def main(args):
@@ -30,14 +30,14 @@ def main(args):
     # create model
     vocab = dp.vocab
     embed_dim = args.dim
-    model = Classifier(QRNNAutoEncoder(n_vocab=len(vocab), embed_dim=embed_dim))
+    model = RecNetClassifier(QRNNAutoEncoder(n_vocab=len(vocab), embed_dim=embed_dim))
 
     if args.gpu >= 0:
         cuda.get_device(args.gpu).use()
         model.to_gpu()
 
     # setup optimizer
-    optimizer = O.AdaGrad(lr=0.05)
+    optimizer = O.AdaGrad(lr=args.lr)
     optimizer.setup(model)
 
     train_iter = chainer.iterators.SerialIterator(train_data, args.batchsize, shuffle=True)
@@ -47,16 +47,15 @@ def main(args):
     trainer = training.Trainer(updater, (args.epoch, 'epoch'))
 
     # setup evaluation
-    # eval_predictor = model.copy().predictor
-    # eval_predictor.train = False
-    # trainer.extend(extensions.Evaluator(
-    #     dev_iter, eval_predictor, device=args.gpu))
+    eval_model = model.copy()
+    trainer.extend(extensions.Evaluator(
+        dev_iter, eval_model, device=args.gpu, converter=convert))
 
     # extentions...
     trainer.extend(extensions.LogReport())
     trainer.extend(extensions.PrintReport(
-        ['epoch', 'main/loss', 'validation/main/loss', 'main/accuracy']))
-    # trainer.extend(extensions.ProgressBar(update_interval=10))
+        ['epoch', 'main/loss', 'validation/main/loss', 'main/accuracy', 'validation/main/accuracy']))
+    trainer.extend(extensions.ProgressBar(update_interval=5))
     # take a shapshot when the model achieves highest accuracy in dev set
     # trainer.extend(extensions.snapshot_object(
     #     model, 'model_epoch_{.updater.epoch}',
@@ -88,7 +87,8 @@ if __name__ == '__main__':
     parser.set_defaults(test=False)
     parser.add_argument('--decay',  type=float,
                         default=0.0004, help='Weight decay rate')
-    parser.set_defaults(use_test_data=False)
+    parser.add_argument('--lr', type=float,
+                        default=0.04, help='Learning Rate')
     args = parser.parse_args()
 
     main(args)

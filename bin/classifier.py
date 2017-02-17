@@ -5,13 +5,13 @@ from chainer import link
 from chainer import reporter
 
 
-class Classifier(link.Chain):
+class RecNetClassifier(link.Chain):
     compute_accuracy = True
 
     def __init__(self, predictor,
                  lossfun=softmax_cross_entropy.softmax_cross_entropy,
                  accfun=accuracy.accuracy):
-        super(Classifier, self).__init__(predictor=predictor)
+        super(RecNetClassifier, self).__init__(predictor=predictor)
         self.lossfun = lossfun
         self.accfun = accfun
         self.loss = None
@@ -22,9 +22,6 @@ class Classifier(link.Chain):
         sep = len(args) // 2
         xs = args[:sep]
         ts = args[sep:]
-        inds = self.xp.argsort([-len(x.data) for x in xs]).astype('i')
-        xs = [xs[i] for i in inds]
-        ts = [ts[i] for i in inds]
 
         self.loss = None
         ys = self.predictor(*xs)

@@ -24,31 +24,35 @@ class QRNNLayer(Chain):
         self.in_size = in_size
         self.out_size = out_size
 
-        if conv_width ==2:
+        if conv_width == 2:
             super(QRNNLayer, self).__init__(
                 W = L.Linear(in_size=in_size, out_size=3*out_size, nobias=True),
                 V = L.Linear(in_size=in_size, out_size=3*out_size)
             )
-            self.pad_vector = Variable(self.xp.zeros((1, self.in_size), dtype=self.xp.float32))
+            self.pad_vector = Variable(self.xp.zeros((1, self.in_size), dtype=self.xp.float32), volatile='AUTO')
         else:
             print("未実装")
             raise NotImplementedError
 
     def __call__(self, c, xs):
-        """
-        input: list of variables sorted by their lengths
-        """
+        inds = self.xp.argsort([-len(x.data) for x in xs]).astype('i')
+        xs = [xs[i] for i in inds]
         pool_in = self.convolution(xs)
         hs = self.pooling(c, pool_in)
-        return hs
+
+        # permutate the list back
+        ret = [None] * len(inds)
+        for i, idx in enumerate(inds):
+            ret[idx] = hs[i]
+        return ret
 
     def convolution(self, xs):
         x_len = [x.shape[0] for x in xs]
         split_inds = [sum(x_len[:i]) + x for i, x in enumerate(x_len)][:-1]
 
         xs_prev = [F.concat([self.pad_vector, x[:-1,:]], axis=0) for x in xs]
-        xs = F.concat(xs, axis=0)
         xs_prev = F.concat(xs_prev, axis=0)
+        xs = F.concat(xs, axis=0)
         conv_output = self.W(xs_prev) + self.V(xs)
 
         ret = F.transpose_sequence(F.split_axis(conv_output, split_inds, axis=0))
@@ -70,11 +74,11 @@ class QRNNLayer(Chain):
                 c = (1 - f) * z
             else:
                 c_prev = c_prev[:z.shape[0],:]
-                c = f * c_prev * (1 - f) * z
+                c = f * c_prev + (1 - f) * z
             h = o * c
             hs.append(h)
             c_prev = c
-        return hs
+        return F.transpose_sequence(hs)
 
 class QRNNAutoEncoder(Chain):
     def __init__(self, n_vocab, embed_dim, out_size=50, conv_width=2):
@@ -89,6 +93,6 @@ class QRNNAutoEncoder(Chain):
         xs = args
         emx = [self.embed(x) for x in xs]
         hs = self.qrnn(c=None, xs=emx)
+        # print([h.shape for h in hs])
         ys = [self.l1(h) for h in hs]
-        ys = F.transpose_sequence(ys)
         return ys
