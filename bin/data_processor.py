@@ -47,6 +47,5 @@ class DataProcessor(object):
                 tokens = line.strip().split()
                 xs = np.array([self.vocab[t] for t in tokens], dtype=np.int32)
                 ys = np.array([self.vocab[t] for t in tokens], dtype=np.int32)
-                xs_len = np.array([len(xs)], dtype=np.int32)
-                dataset.append((xs, ys, xs_len))
+                dataset.append((xs, ys))
         return dataset

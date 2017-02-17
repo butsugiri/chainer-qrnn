@@ -18,8 +18,7 @@ def convert(batch, device):
         def to_device(x):
             return cuda.to_gpu(x, device, cuda.Stream.null)
 
-    xs = [to_device(x) for x, _, _ in batch]
-    ts = [to_device(t) for _, t, _ in batch]
-    x_len = [to_device(l) for _, _, l in batch]
-    out = tuple(xs + ts + x_len)
+    xs = [to_device(x) for x, _, in batch]
+    ts = [to_device(t) for _, t, in batch]
+    out = tuple(xs + ts)
     return out

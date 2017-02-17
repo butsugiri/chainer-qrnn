@@ -8,6 +8,13 @@ from chainer import cuda, Function, Variable, reporter
 from chainer import Link, Chain
 from chainer import reporter
 
+"""
+TODO
+* Evaluation for each epoch
+* My own extension that tests autoconding
+* implement "zoneout"
+"""
+
 
 class QRNNLayer(Chain):
     """
@@ -70,7 +77,7 @@ class QRNNLayer(Chain):
         return hs
 
 class QRNNAutoEncoder(Chain):
-    def __init__(self, n_vocab, embed_dim, out_size=10, conv_width=2):
+    def __init__(self, n_vocab, embed_dim, out_size=50, conv_width=2):
         self.embed_dim = embed_dim
         super(QRNNAutoEncoder, self).__init__(
             embed = L.EmbedID(in_size=n_vocab, out_size=embed_dim),
@@ -79,23 +86,9 @@ class QRNNAutoEncoder(Chain):
         )
 
     def __call__(self, *args):
-        sep = len(args) // 3
-        xs = args[:sep]
-        ts = args[sep:sep*2]
-        x_len = args[sep*2:]
-
-        inds = self.xp.argsort([-len(x.data) for x in xs]).astype('i')
-        xs = [xs[i] for i in inds]
-        ts = [ts[i] for i in inds]
-        x_len = [int(x_len[i].data) for i in inds]
-
+        xs = args
         emx = [self.embed(x) for x in xs]
         hs = self.qrnn(c=None, xs=emx)
         ys = [self.l1(h) for h in hs]
-        ts = F.transpose_sequence(ts)
-
-        loss = 0.0
-        for y, t in zip(ys, ts):
-            loss = F.softmax_cross_entropy(x=y, t=t)
-        reporter.report({'loss': loss}, self)
-        return loss
+        ys = F.transpose_sequence(ys)
+        return ys

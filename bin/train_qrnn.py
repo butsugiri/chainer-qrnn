@@ -11,14 +11,12 @@ from chainer import reporter, training, cuda
 import chainer.links as L
 import chainer.optimizers as O
 import chainer.functions as F
-from chainer.functions import sigmoid_cross_entropy, binary_accuracy
 from chainer.training import extensions
 
 from net.model import QRNNAutoEncoder
 from utils import convert
 from data_processor import DataProcessor
-from chainer.dataset import concat_examples
-from functools import partial
+from classifier import Classifier
 
 
 def main(args):
@@ -31,26 +29,19 @@ def main(args):
 
     # create model
     vocab = dp.vocab
-    pad_idx = dp.pad_value
     embed_dim = args.dim
-    model = QRNNAutoEncoder(n_vocab=len(vocab), embed_dim=embed_dim)  # ABCNNはoutput = 50固定らしいが．
+    model = Classifier(QRNNAutoEncoder(n_vocab=len(vocab), embed_dim=embed_dim))
 
     if args.gpu >= 0:
         cuda.get_device(args.gpu).use()
         model.to_gpu()
 
     # setup optimizer
-    optimizer = O.Adam()
+    optimizer = O.AdaGrad(lr=0.05)
     optimizer.setup(model)
 
     train_iter = chainer.iterators.SerialIterator(train_data, args.batchsize, shuffle=True)
-
-    dev_train_iter = chainer.iterators.SerialIterator(
-        train_data, args.batchsize, repeat=False)
-    if args.use_test_data:
-        dev_iter = chainer.iterators.SerialIterator(test_data, args.batchsize, repeat=False)
-    else:
-        dev_iter = chainer.iterators.SerialIterator(dev_data, args.batchsize, repeat=False)
+    dev_iter = chainer.iterators.SerialIterator(dev_data, args.batchsize, repeat=False)
 
     updater = training.StandardUpdater(train_iter, optimizer, device=args.gpu, converter=convert)
     trainer = training.Trainer(updater, (args.epoch, 'epoch'))
@@ -64,7 +55,7 @@ def main(args):
     # extentions...
     trainer.extend(extensions.LogReport())
     trainer.extend(extensions.PrintReport(
-        ['epoch', 'main/loss', 'validation/main/loss']))
+        ['epoch', 'main/loss', 'validation/main/loss', 'main/accuracy']))
     # trainer.extend(extensions.ProgressBar(update_interval=10))
     # take a shapshot when the model achieves highest accuracy in dev set
     # trainer.extend(extensions.snapshot_object(
@@ -80,7 +71,7 @@ if __name__ == '__main__':
     parser.add_argument('--gpu  ', dest='gpu', type=int,
                         default=-1, help='GPU ID (Negative value indicates CPU)')
     parser.add_argument('--epoch', dest='epoch', type=int,
-                        default=5, help='Number of times to iterate through the dataset')
+                        default=100, help='Number of times to iterate through the dataset')
     parser.add_argument('--batchsize', dest='batchsize', type=int,
                         default=3, help='Minibatch size')
     parser.add_argument('--data',  type=str,
