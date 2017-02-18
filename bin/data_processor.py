@@ -12,12 +12,11 @@ class DataProcessor(object):
 
     def __init__(self, data_path, test_run):
         self.train_data_path = os.path.join(data_path, "train.txt")
-        self.dev_data_path = os.path.join(data_path, "train.txt")
-        self.test_data_path = os.path.join(data_path, "train.txt")
+        self.dev_data_path = os.path.join(data_path, "valid.txt")
+        self.test_data_path = os.path.join(data_path, "test.txt")
         self.test_run = test_run # if true, use tiny datasets for quick test
 
         self.vocab = defaultdict(lambda: len(self.vocab))
-        self.vocab["<-UNK->"]
 
     def prepare_dataset(self):
         # load train/dev/test data
@@ -44,7 +43,7 @@ class DataProcessor(object):
             for line in islice(input_data, end):
                 # creating auto encoder for now
                 tokens = line.strip().split()
-                xs = np.array([self.vocab[t] for t in tokens], dtype=np.int32)
-                ys = np.array([self.vocab[t] for t in tokens], dtype=np.int32)
-                dataset.append((xs, ys))
+                xs = [self.vocab[t] for t in tokens]
+                dataset.append(xs)
+        dataset = np.array([token for sent in dataset for token in sent], dtype=np.int32)
         return dataset

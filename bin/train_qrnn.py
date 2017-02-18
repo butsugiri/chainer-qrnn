@@ -8,10 +8,12 @@ import chainer.optimizers as O
 import chainer.functions as F
 from chainer.training import extensions
 
-from net.model import QRNNAutoEncoder
+from net.model import QRNNLangModel
 from utils import convert
 from data_processor import DataProcessor
 from classifier import RecNetClassifier
+from iterator import ParallelSequentialIterator
+from updater import BPTTUpdater
 
 
 def main(args):
@@ -25,7 +27,7 @@ def main(args):
     # create model
     vocab = dp.vocab
     embed_dim = args.dim
-    model = RecNetClassifier(QRNNAutoEncoder(n_vocab=len(vocab), embed_dim=embed_dim))
+    model = RecNetClassifier(QRNNLangModel(n_vocab=len(vocab), embed_dim=embed_dim))
 
     if args.gpu >= 0:
         cuda.get_device(args.gpu).use()
@@ -36,10 +38,10 @@ def main(args):
     optimizer.setup(model)
 
     # create iterators from loaded data
-    train_iter = chainer.iterators.SerialIterator(train_data, args.batchsize, shuffle=True)
-    dev_iter = chainer.iterators.SerialIterator(dev_data, args.batchsize, repeat=False)
+    train_iter = ParallelSequentialIterator(train_data, args.batchsize, bprop_len=30)
+    dev_iter = ParallelSequentialIterator(dev_data, args.batchsize, repeat=False, bprop_len=30)
 
-    updater = training.StandardUpdater(train_iter, optimizer, device=args.gpu, converter=convert)
+    updater = BPTTUpdater(train_iter, optimizer, device=args.gpu, converter=convert, bprop_len=30)
     trainer = training.Trainer(updater, (args.epoch, 'epoch'))
 
     # setup evaluation
@@ -70,7 +72,7 @@ if __name__ == '__main__':
     parser.add_argument('--batchsize', dest='batchsize', type=int,
                         default=3, help='Minibatch size')
     parser.add_argument('--data',  type=str,
-                        default='../data/', help='Path to input (train/dev/test) data file')
+                        default='../data/ptb', help='Path to input (train/dev/test) data file')
     parser.add_argument('--dim',  type=int,
                         default=10, help='embed dimension')
     parser.add_argument('--glove', action='store_true',

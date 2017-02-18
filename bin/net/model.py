@@ -10,9 +10,6 @@ from chainer import reporter
 
 """
 TODO:
-* Implement Language model
-    * Mikolov's PTB
-    * Follow train_ptb.py
 * Implement "zoneout"
 * Kernel size other than k==2
 """
@@ -83,10 +80,10 @@ class QRNNLayer(Chain):
             c_prev = c
         return F.transpose_sequence(hs)
 
-class QRNNAutoEncoder(Chain):
+class QRNNLangModel(Chain):
     def __init__(self, n_vocab, embed_dim, out_size=50, conv_width=2):
         self.embed_dim = embed_dim
-        super(QRNNAutoEncoder, self).__init__(
+        super(QRNNLangModel, self).__init__(
             embed = L.EmbedID(in_size=n_vocab, out_size=embed_dim),
             qrnn = QRNNLayer(in_size=embed_dim, out_size=out_size),
             l1 = L.Linear(in_size=out_size, out_size=n_vocab)
