@@ -85,7 +85,7 @@ class QRNNLayer(Chain):
         return F.transpose_sequence(hs)
 
 class QRNNLangModel(Chain):
-    def __init__(self, n_vocab, embed_dim, out_size=out_size, conv_width=2, train=True):
+    def __init__(self, n_vocab, embed_dim, out_size, conv_width=2, train=True):
         self.embed_dim = embed_dim
         super(QRNNLangModel, self).__init__(
             embed = L.EmbedID(in_size=n_vocab, out_size=embed_dim),
