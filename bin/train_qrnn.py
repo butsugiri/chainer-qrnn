@@ -34,6 +34,7 @@ def main(args):
     if args.gpu >= 0:
         cuda.get_device(args.gpu).use()
         model.to_gpu()
+        model.predictor.qrnn.pad_vector.to_gpu()
 
     # setup optimizer
     optimizer = O.AdaGrad(lr=args.lr)
