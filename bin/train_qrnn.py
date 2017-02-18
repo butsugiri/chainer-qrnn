@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import argparse
+import numpy as np
 
 import chainer
 from chainer import reporter, training, cuda
@@ -46,13 +47,14 @@ def main(args):
 
     # setup evaluation
     eval_model = model.copy()
+    eval_model.train = False
     trainer.extend(extensions.Evaluator(
         dev_iter, eval_model, device=args.gpu, converter=convert))
 
     # extentions...
-    trainer.extend(extensions.LogReport())
+    trainer.extend(extensions.LogReport(postprocess=compute_perplexity))
     trainer.extend(extensions.PrintReport(
-        ['epoch', 'main/loss', 'validation/main/loss', 'main/accuracy', 'validation/main/accuracy']))
+        ['epoch', 'main/loss', 'validation/main/loss', 'val_perplexity', 'perplexity']))
     trainer.extend(extensions.ProgressBar(update_interval=5))
     # take a shapshot when the model achieves highest accuracy in dev set
     # trainer.extend(extensions.snapshot_object(
@@ -62,6 +64,11 @@ def main(args):
     # trainer.extend(extensions.ExponentialShift("lr", 0.5, optimizer=optimizer),
     #                trigger=chainer.training.triggers.MaxValueTrigger("validation/main/map"))
     trainer.run()
+
+def compute_perplexity(result):
+    result['perplexity'] = np.exp(result['main/loss'])
+    if 'validation/main/loss' in result:
+        result['val_perplexity'] = np.exp(result['validation/main/loss'])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

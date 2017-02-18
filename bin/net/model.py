@@ -10,8 +10,8 @@ from chainer import reporter
 
 """
 TODO:
-* Implement "zoneout"
 * Kernel size other than k==2
+* Perplexity
 """
 
 
@@ -30,7 +30,7 @@ class QRNNLayer(Chain):
             print("未実装")
             raise NotImplementedError
 
-    def __call__(self, c, xs):
+    def __call__(self, c, xs, train=True):
         """
         The API is (almost) equivalent to NStepLSTM's.
         Just pass the list of variables, and they get encoded.
@@ -38,7 +38,7 @@ class QRNNLayer(Chain):
         inds = self.xp.argsort([-len(x.data) for x in xs]).astype('i')
         xs = [xs[i] for i in inds]
         pool_in = self.convolution(xs)
-        hs = self.pooling(c, pool_in)
+        hs = self.pooling(c, pool_in, train)
 
         # permutate the list back
         ret = [None] * len(inds)
@@ -58,7 +58,7 @@ class QRNNLayer(Chain):
         ret = F.transpose_sequence(F.split_axis(conv_output, split_inds, axis=0))
         return ret
 
-    def pooling(self, c, xs):
+    def pooling(self, c, xs, train):
         """
         implement fo-pooling
         (seemingly the best option when compared to ifo/f-pooling)
@@ -74,24 +74,29 @@ class QRNNLayer(Chain):
                 c = (1 - f) * z
             else:
                 c_prev = c_prev[:z.shape[0],:]
-                c = f * c_prev + (1 - f) * z
+                if train:
+                    zoneout_mask = (0.1 < self.xp.random.rand(*f.shape))
+                    c = f * c_prev + (1 - f) * z * zoneout_mask
+                else:
+                    c = f * c_prev + (1 - f) * z
             h = o * c
             hs.append(h)
             c_prev = c
         return F.transpose_sequence(hs)
 
 class QRNNLangModel(Chain):
-    def __init__(self, n_vocab, embed_dim, out_size=50, conv_width=2):
+    def __init__(self, n_vocab, embed_dim, out_size=50, conv_width=2, train=True):
         self.embed_dim = embed_dim
         super(QRNNLangModel, self).__init__(
             embed = L.EmbedID(in_size=n_vocab, out_size=embed_dim),
             qrnn = QRNNLayer(in_size=embed_dim, out_size=out_size),
             l1 = L.Linear(in_size=out_size, out_size=n_vocab)
         )
+        self.train = train
 
     def __call__(self, *args):
         xs = args
         emx = [self.embed(x) for x in xs]
-        hs = self.qrnn(c=None, xs=emx)
+        hs = self.qrnn(c=None, xs=emx, train=self.train)
         ys = [self.l1(h) for h in hs]
         return ys
