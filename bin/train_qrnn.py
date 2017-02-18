@@ -57,9 +57,9 @@ def main(args):
         ['epoch', 'main/loss', 'validation/main/loss', 'val_perplexity', 'perplexity']))
     trainer.extend(extensions.ProgressBar(update_interval=5))
     # take a shapshot when the model achieves highest accuracy in dev set
-    # trainer.extend(extensions.snapshot_object(
-    #     model, 'model_epoch_{.updater.epoch}',
-    #     trigger=chainer.training.triggers.MaxValueTrigger('validation/main/map')))
+    trainer.extend(extensions.snapshot_object(
+        model, 'model_epoch_{.updater.epoch}',
+        trigger=chainer.training.triggers.MinValueTrigger('validation/main/loss')))
 
     # trainer.extend(extensions.ExponentialShift("lr", 0.5, optimizer=optimizer),
     #                trigger=chainer.training.triggers.MaxValueTrigger("validation/main/map"))
