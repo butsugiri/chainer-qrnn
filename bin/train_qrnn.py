@@ -28,7 +28,7 @@ def main(args):
     # create model
     vocab = dp.vocab
     embed_dim = args.dim
-    out_size = args.out_size
+    out_size = args.unit
     model = RecNetClassifier(QRNNLangModel(n_vocab=len(vocab), embed_dim=embed_dim, out_size=out_size))
 
     if args.gpu >= 0:
