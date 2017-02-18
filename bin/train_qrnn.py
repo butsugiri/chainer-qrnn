@@ -28,7 +28,8 @@ def main(args):
     # create model
     vocab = dp.vocab
     embed_dim = args.dim
-    model = RecNetClassifier(QRNNLangModel(n_vocab=len(vocab), embed_dim=embed_dim))
+    out_size = args.out_size
+    model = RecNetClassifier(QRNNLangModel(n_vocab=len(vocab), embed_dim=embed_dim, out_size=out_size))
 
     if args.gpu >= 0:
         cuda.get_device(args.gpu).use()
@@ -94,6 +95,8 @@ if __name__ == '__main__':
                         default=0.0004, help='Weight decay rate')
     parser.add_argument('--lr', type=float,
                         default=0.04, help='Learning Rate')
+    parser.add_argument('--unit', type=int,
+                        default=10, help='Hidden dim')
     args = parser.parse_args()
 
     main(args)

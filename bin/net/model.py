@@ -35,7 +35,7 @@ class QRNNLayer(Chain):
         The API is (almost) equivalent to NStepLSTM's.
         Just pass the list of variables, and they get encoded.
         """
-        inds = self.xp.argsort([-len(x.data) for x in xs]).astype('i')
+        inds = np.argsort([-len(x.data) for x in xs]).astype('i')
         xs = [xs[i] for i in inds]
         pool_in = self.convolution(xs)
         hs = self.pooling(c, pool_in, train)
@@ -85,7 +85,7 @@ class QRNNLayer(Chain):
         return F.transpose_sequence(hs)
 
 class QRNNLangModel(Chain):
-    def __init__(self, n_vocab, embed_dim, out_size=50, conv_width=2, train=True):
+    def __init__(self, n_vocab, embed_dim, out_size=out_size, conv_width=2, train=True):
         self.embed_dim = embed_dim
         super(QRNNLangModel, self).__init__(
             embed = L.EmbedID(in_size=n_vocab, out_size=embed_dim),
