@@ -11,6 +11,7 @@ from chainer import reporter
 """
 TODO:
 * Kernel size other than k==2
+* dropout for embedding
 """
 
 
@@ -88,7 +89,8 @@ class QRNNLangModel(Chain):
         self.embed_dim = embed_dim
         super(QRNNLangModel, self).__init__(
             embed = L.EmbedID(in_size=n_vocab, out_size=embed_dim),
-            qrnn = QRNNLayer(in_size=embed_dim, out_size=out_size),
+            qrnn_1 = QRNNLayer(in_size=embed_dim, out_size=out_size),
+            qrnn_2 = QRNNLayer(in_size=out_size, out_size=out_size),
             l1 = L.Linear(in_size=out_size, out_size=n_vocab)
         )
         self.train = train
@@ -97,8 +99,8 @@ class QRNNLangModel(Chain):
         xs = args
         emx = [self.embed(x) for x in xs]
         # layer1
-        hs = self.qrnn(c=None, xs=emx, train=self.train)
+        hs = self.qrnn_1(c=None, xs=emx, train=self.train)
         # layer2
-        hs = self.qrnn(c=None, xs=hs, train=self.train)
+        hs = self.qrnn_2(c=None, xs=hs, train=self.train)
         ys = [self.l1(h) for h in hs]
         return ys
