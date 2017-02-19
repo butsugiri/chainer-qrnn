@@ -24,6 +24,11 @@ def convert(batch, device):
     return out
 
 class ThresholdTrigger(object):
+    """
+    The trigger that activates after certain epoch
+    e.g. Keep the learning rate fixed for first n epochs,
+    and then decay it by 0.95 for each epoch
+    """
     def __init__(self, period, unit, threshold):
         self.period = period
         assert unit == 'epoch' or unit == 'iteration'
