@@ -10,7 +10,7 @@ import chainer.functions as F
 from chainer.training import extensions
 
 from net.model import QRNNLangModel
-from utils import convert
+from utils import convert, ThresholdTrigger
 from data_processor import DataProcessor
 from classifier import RecNetClassifier
 from iterator import ParallelSequentialIterator
@@ -37,14 +37,17 @@ def main(args):
         model.predictor.qrnn.pad_vector.to_gpu()
 
     # setup optimizer
-    optimizer = O.AdaGrad(lr=args.lr)
+    optimizer = O.SGD(lr=args.lr)
     optimizer.setup(model)
+    optimizer.add_hook(chainer.optimizer.GradientClipping(10))
+    optimizer.add_hook(chainer.optimizer.WeightDecay(args.decay))
 
     # create iterators from loaded data
-    train_iter = ParallelSequentialIterator(train_data, args.batchsize, bprop_len=30)
-    dev_iter = ParallelSequentialIterator(dev_data, args.batchsize, repeat=False, bprop_len=30)
+    bprop_len = args.bproplen
+    train_iter = ParallelSequentialIterator(train_data, args.batchsize, bprop_len=bprop_len)
+    dev_iter = ParallelSequentialIterator(dev_data, args.batchsize, repeat=False, bprop_len=bprop_len)
 
-    updater = BPTTUpdater(train_iter, optimizer, device=args.gpu, converter=convert, bprop_len=30)
+    updater = BPTTUpdater(train_iter, optimizer, device=args.gpu, converter=convert)
     trainer = training.Trainer(updater, (args.epoch, 'epoch'))
 
     # setup evaluation
@@ -63,8 +66,8 @@ def main(args):
         model, 'model_epoch_{.updater.epoch}',
         trigger=chainer.training.triggers.MinValueTrigger('validation/main/loss')))
 
-    # trainer.extend(extensions.ExponentialShift("lr", 0.5, optimizer=optimizer),
-    #                trigger=chainer.training.triggers.MaxValueTrigger("validation/main/map"))
+    trainer.extend(extensions.ExponentialShift("lr", 0.95, optimizer=optimizer),
+                   trigger=ThresholdTrigger(1, 'epoch', 6))
     trainer.run()
 
 def compute_perplexity(result):
@@ -77,9 +80,9 @@ if __name__ == '__main__':
     parser.add_argument('--gpu  ', dest='gpu', type=int,
                         default=-1, help='GPU ID (Negative value indicates CPU)')
     parser.add_argument('--epoch', dest='epoch', type=int,
-                        default=100, help='Number of times to iterate through the dataset')
+                        default=72, help='Number of times to iterate through the dataset')
     parser.add_argument('--batchsize', dest='batchsize', type=int,
-                        default=3, help='Minibatch size')
+                        default=20, help='Minibatch size')
     parser.add_argument('--data',  type=str,
                         default='../data/ptb', help='Path to input (train/dev/test) data file')
     parser.add_argument('--dim',  type=int,
@@ -93,11 +96,13 @@ if __name__ == '__main__':
                         help='Use tiny dataset for quick test')
     parser.set_defaults(test=False)
     parser.add_argument('--decay',  type=float,
-                        default=0.0004, help='Weight decay rate')
+                        default=0.0002, help='Weight decay rate')
     parser.add_argument('--lr', type=float,
-                        default=0.04, help='Learning Rate')
+                        default=1.0, help='Learning Rate')
     parser.add_argument('--unit', type=int,
                         default=10, help='Hidden dim')
+    parser.add_argument('--bproplen', type=int,
+                        default=105, help='Backprop Length for BPTT')
     args = parser.parse_args()
 
     main(args)

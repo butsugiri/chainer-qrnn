@@ -10,10 +10,9 @@ import numpy as np
 
 class BPTTUpdater(training.StandardUpdater):
 
-    def __init__(self, train_iter, optimizer, bprop_len, device, converter):
+    def __init__(self, train_iter, optimizer, device, converter):
         super(BPTTUpdater, self).__init__(
             train_iter, optimizer, device=device)
-        self.bprop_len = bprop_len
         self.converter = converter
 
     def update_core(self):

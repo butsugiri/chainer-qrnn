@@ -11,7 +11,6 @@ from chainer import reporter
 """
 TODO:
 * Kernel size other than k==2
-* Perplexity
 """
 
 
@@ -97,6 +96,9 @@ class QRNNLangModel(Chain):
     def __call__(self, *args):
         xs = args
         emx = [self.embed(x) for x in xs]
+        # layer1
         hs = self.qrnn(c=None, xs=emx, train=self.train)
+        # layer2
+        hs = self.qrnn(c=None, xs=hs, train=self.train)
         ys = [self.l1(h) for h in hs]
         return ys
