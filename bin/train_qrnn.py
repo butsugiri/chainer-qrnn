@@ -53,7 +53,7 @@ def main(args):
 
     # setup evaluation
     eval_model = model.copy()
-    eval_model.train = False
+    eval_model.predictor.train = False
     trainer.extend(extensions.Evaluator(
         dev_iter, eval_model, device=args.gpu, converter=convert))
 

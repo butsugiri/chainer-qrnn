@@ -11,7 +11,6 @@ from chainer import reporter
 """
 TODO:
 * Kernel size other than k==2
-* dropout for embedding
 """
 
 
@@ -89,18 +88,20 @@ class QRNNLangModel(Chain):
         self.embed_dim = embed_dim
         super(QRNNLangModel, self).__init__(
             embed = L.EmbedID(in_size=n_vocab, out_size=embed_dim),
-            qrnn_1 = QRNNLayer(in_size=embed_dim, out_size=out_size),
-            qrnn_2 = QRNNLayer(in_size=out_size, out_size=out_size),
-            l1 = L.Linear(in_size=out_size, out_size=n_vocab)
+            layer1 = QRNNLayer(in_size=embed_dim, out_size=out_size),
+            layer2 = QRNNLayer(in_size=out_size, out_size=out_size),
+            fc = L.Linear(in_size=out_size, out_size=n_vocab)
         )
+        # when validating, set this False manually
         self.train = train
 
     def __call__(self, *args):
         xs = args
-        emx = [self.embed(x) for x in xs]
+        emx = [F.dropout(self.embed(x), train=self.train) for x in xs]
         # layer1
-        hs = self.qrnn_1(c=None, xs=emx, train=self.train)
+        layer1_output = self.layer1(c=None, xs=emx, train=self.train)
+        layer2_input = [F.dropout(h, train=self.train) for h in layer1_output]
         # layer2
-        hs = self.qrnn_2(c=None, xs=hs, train=self.train)
-        ys = [self.l1(h) for h in hs]
+        layer2_output = self.layer2(c=None, xs=layer2_input, train=self.train)
+        ys = [self.fc(h) for h in layer2_output]
         return ys
