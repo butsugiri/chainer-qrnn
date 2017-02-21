@@ -23,15 +23,13 @@ class RecNetClassifier(link.Chain):
         xs = args[:sep]
         ts = args[sep:]
 
-        self.loss = None
+        self.loss = 0
         ys = self.predictor(*xs)
         for y, t in zip(ys, ts):
-            if self.loss is None:
-                self.loss = self.lossfun(y, t)
-            else:
-                self.loss += self.lossfun(y, t)
+            loss = self.lossfun(y, t)
+            reporter.report({'loss': loss}, self)
+            self.loss += loss
             if self.compute_accuracy:
                 self.accuracy = self.accfun(y, t)
                 reporter.report({'accuracy': self.accuracy}, self)
-        reporter.report({'loss': self.loss}, self)
         return self.loss
