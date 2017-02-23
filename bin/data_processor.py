@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
-import json
 import numpy as np
-import pickle
 from collections import defaultdict
-from itertools import groupby, islice
+from itertools import islice
 
 
 class DataProcessor(object):
@@ -15,7 +13,6 @@ class DataProcessor(object):
         self.dev_data_path = os.path.join(data_path, "valid.txt")
         self.test_data_path = os.path.join(data_path, "test.txt")
         self.test_run = test_run # if true, use tiny datasets for quick test
-
         self.vocab = defaultdict(lambda: len(self.vocab))
 
     def prepare_dataset(self):
@@ -37,9 +34,8 @@ class DataProcessor(object):
             path = self.test_data_path
 
         dataset = []
-        question_ids = []
         end = 100 if self.test_run else None
-        with open(path, "r") as input_data:
+        with open(path, 'r') as input_data:
             for line in islice(input_data, end):
                 # creating auto encoder for now
                 tokens = line.strip().split()

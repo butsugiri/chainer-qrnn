@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+import os
+import sys
 import argparse
 import numpy as np
+from datetime import datetime
+import json
 
 import chainer
 from chainer import reporter, training, cuda
@@ -18,6 +22,16 @@ from updater import BPTTUpdater
 
 
 def main(args):
+    # mkdir
+    start_time = datetime.now().strftime('%m%d_%H_%M_%S')
+    dest = os.path.join("../result/", start_time)
+    os.makedirs(dest)
+    abs_dest = os.path.abspath(dest)
+    with open(os.path.join(dest, "settings.json"), "w") as fo:
+        print("Log files are saved in {}".format(abs_dest, file=sys.stderr))
+        fo.write(json.dumps(vars(args), sort_keys=True, indent=4))
+        print(json.dumps(vars(args), sort_keys=True, indent=4), file=sys.stderr)
+
     # load data
     dp = DataProcessor(args.data, args.test)
     dp.prepare_dataset()
@@ -38,7 +52,7 @@ def main(args):
         model.predictor.layer2.pad_vector.to_gpu()
 
     # setup optimizer
-    optimizer = O.SGD(lr=args.lr)
+    optimizer = O.AdaGrad(lr=0.01)
     optimizer.setup(model)
     optimizer.add_hook(chainer.optimizer.GradientClipping(10))
     optimizer.add_hook(chainer.optimizer.WeightDecay(args.decay))
@@ -49,7 +63,7 @@ def main(args):
     dev_iter = ParallelSequentialIterator(dev_data, args.batchsize, repeat=False, bprop_len=bprop_len)
 
     updater = BPTTUpdater(train_iter, optimizer, device=args.gpu, converter=convert)
-    trainer = training.Trainer(updater, (args.epoch, 'epoch'))
+    trainer = training.Trainer(updater, (args.epoch, 'epoch'), out=abs_dest)
 
     # setup evaluation
     eval_model = model.copy()

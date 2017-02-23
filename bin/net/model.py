@@ -64,6 +64,7 @@ class QRNNLayer(Chain):
         """
         c_prev = c
         hs = []
+
         for x in xs:
             w0, w1, w2 = F.split_axis(x, 3, axis=1)
             z = F.tanh(w0)
@@ -73,11 +74,12 @@ class QRNNLayer(Chain):
                 c = (1 - f) * z
             else:
                 c_prev = c_prev[:z.shape[0],:]
-                if train:
-                    zoneout_mask = (0.1 < self.xp.random.rand(*f.shape))
-                    c = f * c_prev + (1 - f) * z * zoneout_mask
-                else:
-                    c = f * c_prev + (1 - f) * z
+                # if train:
+                #     zoneout_mask = (0.1 < self.xp.random.rand(*f.shape))
+                #     c = f * c_prev + (1 - f) * z * zoneout_mask
+                # else:
+                #     c = f * c_prev + (1 - f) * z
+                c = f * c_prev + (1 - f) * z
             h = o * c
             hs.append(h)
             c_prev = c
