@@ -7,3 +7,6 @@ The original paper is:
 The original implementation of QRNN (also written in Chainer) is publicly available on this [blog post](https://metamind.io/research/new-neural-network-building-block-allows-faster-and-more-accurate-text-understanding/). However, the author only provides so-called "core" implementation, which is not runnable by itself．
 
 Thus, this repository aims to offer full-implementation of QRNN.
+
+# Note
+Still buggy.
