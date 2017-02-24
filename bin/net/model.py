@@ -24,7 +24,6 @@ class QRNNLayer(Chain):
                 W = L.Linear(in_size=in_size, out_size=3*out_size, nobias=True),
                 V = L.Linear(in_size=in_size, out_size=3*out_size)
             )
-            self.pad_vector = Variable(self.xp.zeros((1, self.in_size), dtype=self.xp.float32), volatile='AUTO')
         else:
             print("未実装")
             raise NotImplementedError
@@ -36,7 +35,7 @@ class QRNNLayer(Chain):
         """
         inds = np.argsort([-len(x.data) for x in xs]).astype('i')
         xs_ = [xs[i] for i in inds]
-        pool_in = self.convolution(xs_)
+        pool_in = self.convolution(xs_, train)
         hs = self.pooling(c, pool_in, train)
 
         # permutate the list back
@@ -45,9 +44,10 @@ class QRNNLayer(Chain):
             ret[idx] = hs[i]
         return ret
 
-    def convolution(self, xs):
+    def convolution(self, xs, train):
         x_len = [x.shape[0] for x in xs]
-        xs_prev = [F.concat([self.pad_vector, x[:-1,:]], axis=0) for x in xs]
+        pad = Variable(self.xp.zeros((1, self.in_size), dtype=self.xp.float32), volatile=not train)
+        xs_prev = [F.concat([pad, x[:-1,:]], axis=0) for x in xs]
         conv_output = [self.W(x1) + self.V(x2) for x1, x2 in zip(xs_prev, xs)]
         ret = F.transpose_sequence(conv_output)
         return ret

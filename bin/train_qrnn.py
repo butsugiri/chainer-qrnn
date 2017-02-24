@@ -56,8 +56,6 @@ def main(args):
     if args.gpu >= 0:
         cuda.get_device(args.gpu).use()
         model.to_gpu()
-        model.predictor.layer1.pad_vector.to_gpu()
-        model.predictor.layer2.pad_vector.to_gpu()
 
     # setup optimizer
     optimizer = O.SGD(lr=1.0)
@@ -72,7 +70,6 @@ def main(args):
 
     updater = BPTTUpdater(train_iter, optimizer, device=args.gpu, converter=convert)
     trainer = training.Trainer(updater, (args.epoch, 'epoch'), out=abs_dest)
-    model.predictor.train = False
 
     # setup evaluation
     eval_model = model.copy()
