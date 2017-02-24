@@ -3,6 +3,7 @@ from chainer.functions.evaluation import accuracy
 from chainer.functions.loss import softmax_cross_entropy
 from chainer import link
 from chainer import reporter
+import chainer.functions as F
 
 
 class RecNetClassifier(link.Chain):
@@ -26,7 +27,7 @@ class RecNetClassifier(link.Chain):
         self.loss = 0
         ys = self.predictor(*xs)
         for y, t in zip(ys, ts):
-            loss = self.lossfun(y, t)
+            loss = self.lossfun(y, t, normalize=True)
             reporter.report({'loss': loss}, self)
             self.loss += loss
             if self.compute_accuracy:

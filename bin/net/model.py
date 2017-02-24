@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -* coding: utf-8 -*-
 import sys
 import chainer
 import chainer.functions as F
@@ -32,11 +32,11 @@ class QRNNLayer(Chain):
     def __call__(self, c, xs, train=True):
         """
         The API is (almost) equivalent to NStepLSTM's.
-        Just pass the list of variables, and they get encoded.
+        Just pass the list of variables, and they are encoded.
         """
         inds = np.argsort([-len(x.data) for x in xs]).astype('i')
-        xs = [xs[i] for i in inds]
-        pool_in = self.convolution(xs)
+        xs_ = [xs[i] for i in inds]
+        pool_in = self.convolution(xs_)
         hs = self.pooling(c, pool_in, train)
 
         # permutate the list back
@@ -47,14 +47,9 @@ class QRNNLayer(Chain):
 
     def convolution(self, xs):
         x_len = [x.shape[0] for x in xs]
-        split_inds = [sum(x_len[:i]) + x for i, x in enumerate(x_len)][:-1]
-
         xs_prev = [F.concat([self.pad_vector, x[:-1,:]], axis=0) for x in xs]
-        xs_prev = F.concat(xs_prev, axis=0)
-        xs = F.concat(xs, axis=0)
-        conv_output = self.W(xs_prev) + self.V(xs)
-
-        ret = F.transpose_sequence(F.split_axis(conv_output, split_inds, axis=0))
+        conv_output = [self.W(x1) + self.V(x2) for x1, x2 in zip(xs_prev, xs)]
+        ret = F.transpose_sequence(conv_output)
         return ret
 
     def pooling(self, c, xs, train):
