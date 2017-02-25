@@ -87,8 +87,8 @@ def main(args):
         model, 'model_epoch_{.updater.epoch}',
         trigger=chainer.training.triggers.MinValueTrigger('validation/main/loss')))
 
-    # trainer.extend(extensions.ExponentialShift("lr", 0.95, optimizer=optimizer),
-    #                trigger=ThresholdTrigger(1, 'epoch', 6))
+    trainer.extend(extensions.ExponentialShift("lr", 0.95, optimizer=optimizer),
+                   trigger=ThresholdTrigger(1, 'epoch', 6))
     trainer.run()
 
 def compute_perplexity(result):
