@@ -23,6 +23,8 @@ class RecNetClassifier(link.Chain):
         sep = len(args) // 2
         xs = args[:sep]
         ts = args[sep:]
+        # [print(x.data) for x in xs]
+        # print()
 
         self.loss = 0
         ys = self.predictor(*xs)

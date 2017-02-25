@@ -75,13 +75,13 @@ def main(args):
     eval_model = model.copy()
     eval_model.predictor.train = False
     trainer.extend(extensions.Evaluator(
-        dev_iter, eval_model, device=args.gpu, converter=convert))
+        dev_iter, eval_model, device=args.gpu, converter=convert, eval_hook=lambda _: eval_model.predictor.reset_state()))
 
     # extentions...
     trainer.extend(extensions.LogReport(postprocess=compute_perplexity))
     trainer.extend(extensions.PrintReport(
         ['epoch', 'main/loss', 'validation/main/loss', 'val_perplexity', 'perplexity']))
-    trainer.extend(extensions.ProgressBar(update_interval=5))
+    trainer.extend(extensions.ProgressBar(update_interval=10))
     # take a shapshot when the model achieves highest accuracy in dev set
     trainer.extend(extensions.snapshot_object(
         model, 'model_epoch_{.updater.epoch}',

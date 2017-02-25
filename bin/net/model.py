@@ -36,16 +36,18 @@ class QRNNLayer(Chain):
         inds = np.argsort([-len(x.data) for x in xs]).astype('i')
         xs_ = [xs[i] for i in inds]
         pool_in = self.convolution(xs_, train)
-        hs = self.pooling(c, pool_in, train)
+        c, hs = self.pooling(c, pool_in, train)
 
         # permutate the list back
         ret = [None] * len(inds)
         for i, idx in enumerate(inds):
             ret[idx] = hs[i]
-        return ret
+        # permutate the cell state, too
+        # print(F.permutate(c, indices=inds, axis=0).data)
+        c = F.permutate(c, indices=inds, axis=0)
+        return c, ret
 
     def convolution(self, xs, train):
-        x_len = [x.shape[0] for x in xs]
         pad = Variable(self.xp.zeros((1, self.in_size), dtype=self.xp.float32), volatile=not train)
         xs_prev = [F.concat([pad, x[:-1,:]], axis=0) for x in xs]
         conv_output = [self.W(x1) + self.V(x2) for x1, x2 in zip(xs_prev, xs)]
@@ -61,14 +63,19 @@ class QRNNLayer(Chain):
         hs = []
 
         for x in xs:
+            batch = x.shape[0]
             w0, w1, w2 = F.split_axis(x, 3, axis=1)
             z = F.tanh(w0)
             f = F.sigmoid(w1)
             o = F.sigmoid(w2)
+
+            c_prev_rest = None
             if c_prev is None:
                 c = (1 - f) * z
             else:
-                c_prev = c_prev[:z.shape[0],:]
+                # when sequence length differs within the minibatch
+                if c_prev.shape[0] > batch:
+                    c_prev, c_prev_rest = F.split_axis(c_prev, [batch] ,axis=0)
                 # if train:
                 #     zoneout_mask = (0.1 < self.xp.random.rand(*f.shape))
                 #     c = f * c_prev + (1 - f) * z * zoneout_mask
@@ -76,9 +83,11 @@ class QRNNLayer(Chain):
                 #     c = f * c_prev + (1 - f) * z
                 c = f * c_prev + (1 - f) * z
             h = o * c
+            if c_prev_rest is not None:
+                c = F.concat([c, c_prev_rest], axis=0)
             hs.append(h)
             c_prev = c
-        return F.transpose_sequence(hs)
+        return c, F.transpose_sequence(hs)
 
 class QRNNLangModel(Chain):
     def __init__(self, n_vocab, embed_dim, out_size, conv_width=2, train=True):
@@ -91,14 +100,34 @@ class QRNNLangModel(Chain):
         )
         # when validating, set this False manually
         self.train = train
+        self.c_layer1 = None
+        self.c_layer2 = None
 
-    def __call__(self, *args):
-        xs = args
+    def reset_state(self):
+        self.c_layer1 = None
+        self.c_layer2 = None
+
+    def __call__(self, *xs):
+        # embedding layer
         emx = [F.dropout(self.embed(x), train=self.train) for x in xs]
+
         # layer1
-        layer1_output = self.layer1(c=None, xs=emx, train=self.train)
-        layer2_input = [F.dropout(h, train=self.train) for h in layer1_output]
+        self.c_layer1, h_layer1 = self.layer1(c=self.c_layer1, xs=emx, train=self.train)
+        h_layer1 = [F.dropout(h, train=self.train) for h in h_layer1]
+
         # layer2
-        layer2_output = self.layer2(c=None, xs=layer2_input, train=self.train)
-        ys = [self.fc(h) for h in layer2_output]
+        self.c_layer2, h_layer2 = self.layer2(c=self.c_layer1, xs=h_layer1, train=self.train)
+
+        # fully-connected layer
+        ys = [self.fc(h) for h in h_layer2]
         return ys
+
+if __name__ == "__main__":
+    model = QRNNLangModel(100, 20, 20)
+    x1 = Variable(np.array([0, 1, 2, 3, 4], dtype=np.int32))
+    x2 = Variable(np.array([21, 22, 23], dtype=np.int32))
+    x3 = Variable(np.array([40, 41, 25], dtype=np.int32))
+    x4 = Variable(np.array([54, 34, 35, 36, 41], dtype=np.int32))
+    x5 = Variable(np.array([69, 34, 70, 71], dtype=np.int32))
+    data = tuple([x1, x2, x3, x4, x5])
+    model(*data)
