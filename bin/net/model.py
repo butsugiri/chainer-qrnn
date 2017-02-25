@@ -75,7 +75,7 @@ class QRNNLayer(Chain):
             else:
                 # when sequence length differs within the minibatch
                 if c_prev.shape[0] > batch:
-                    c_prev, c_prev_rest = F.split_axis(c_prev, [batch] ,axis=0)
+                    c_prev, c_prev_rest = F.split_axis(c_prev, [batch], axis=0)
                 # if train:
                 #     zoneout_mask = (0.1 < self.xp.random.rand(*f.shape))
                 #     c = f * c_prev + (1 - f) * z * zoneout_mask
@@ -117,6 +117,7 @@ class QRNNLangModel(Chain):
 
         # layer2
         self.c_layer2, h_layer2 = self.layer2(c=self.c_layer2, xs=h_layer1, train=self.train)
+        h_layer2 = [F.dropout(h, train=self.train) for h in h_layer2]
 
         # fully-connected layer
         ys = [self.fc(h) for h in h_layer2]

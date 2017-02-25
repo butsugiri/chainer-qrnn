@@ -37,7 +37,7 @@ class DataProcessor(object):
         end = 10 if self.test_run else None
         with open(path, 'r') as input_data:
             for line in islice(input_data, end):
-                tokens = line.strip().split()
+                tokens = line.strip().split() + ["<-eos->"]
                 xs = [self.vocab[t] for t in tokens]
                 dataset.append(xs)
         dataset = np.array([token for sent in dataset for token in sent], dtype=np.int32)
