@@ -43,7 +43,6 @@ class QRNNLayer(Chain):
         for i, idx in enumerate(inds):
             ret[idx] = hs[i]
         # permutate the cell state, too
-        # print(F.permutate(c, indices=inds, axis=0).data)
         c = F.permutate(c, indices=inds, axis=0)
         return c, ret
 
@@ -104,6 +103,9 @@ class QRNNLangModel(Chain):
         self.c_layer2 = None
 
     def reset_state(self):
+        """
+        reset state at the beginning of evaluation
+        """
         self.c_layer1 = None
         self.c_layer2 = None
 

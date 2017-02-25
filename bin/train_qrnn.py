@@ -36,9 +36,9 @@ def main(args):
     os.makedirs(dest)
     abs_dest = os.path.abspath(dest)
     with open(os.path.join(dest, "settings.json"), "w") as fo:
-        # print("Log files are saved in {}".format(abs_dest, file=sys.stderr))
+        print("Log files are saved in {}".format(abs_dest, file=sys.stderr))
         fo.write(json.dumps(vars(args), sort_keys=True, indent=4))
-        # print(json.dumps(vars(args), sort_keys=True, indent=4), file=sys.stderr)
+        print(json.dumps(vars(args), sort_keys=True, indent=4), file=sys.stderr)
 
     # load data
     dp = DataProcessor(args.data, args.test)

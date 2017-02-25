@@ -34,7 +34,7 @@ class DataProcessor(object):
             path = self.test_data_path
 
         dataset = []
-        end = 10 if self.test_run else None
+        end = 100 if self.test_run else None
         with open(path, 'r') as input_data:
             for line in islice(input_data, end):
                 tokens = line.strip().split() + ["<-eos->"]
