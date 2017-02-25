@@ -116,7 +116,7 @@ class QRNNLangModel(Chain):
         h_layer1 = [F.dropout(h, train=self.train) for h in h_layer1]
 
         # layer2
-        self.c_layer2, h_layer2 = self.layer2(c=self.c_layer1, xs=h_layer1, train=self.train)
+        self.c_layer2, h_layer2 = self.layer2(c=self.c_layer2, xs=h_layer1, train=self.train)
 
         # fully-connected layer
         ys = [self.fc(h) for h in h_layer2]
