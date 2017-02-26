@@ -25,8 +25,14 @@ Instead, this repository aims to offer full-implementation of QRNN.
 ## How to run
 1. Download preprocessed version of Penn Tree Bank from [here](http://www.fit.vutbr.cz/˜imikolov/rnnlm/simple-examples.tgz).
 2. Create `data/ptb` directory at the same level as `bin` and copy downloaded data (`train.txt` `valid.txt` `test.txt`) in it.
-2. Train the model: `python train_qrnn.py --gpu <gpu_id> --epoch 100 --dim 640 --batchsize 20 --bproplen 105 --unit 640 --decay 0.0002`
-3. For computing the perplexity for the test set, use `eval_qrnn.py`
+3. Train the model:
+```
+python train_qrnn.py --gpu <gpu_id> --epoch 100 --dim 640 --batchsize 20 --bproplen 105 --unit 640 --decay 0.0002
+```
+4. For computing the perplexity for the test set, use `eval_qrnn.py`
+```
+python eval_qrnn.py --model-path <path_to_trained_model> --config-path <path_to_settings.json>
+```
 
 ## Result
 TBA
