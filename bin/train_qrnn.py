@@ -14,12 +14,12 @@ import chainer.optimizers as O
 import chainer.functions as F
 from chainer.training import extensions
 
-from net.model import QRNNLangModel
-from utils import convert, ThresholdTrigger
-from data_processor import DataProcessor
-from classifier import RecNetClassifier
-from iterator import ParallelSequentialIterator
-from updater import BPTTUpdater
+from QRNNLM.net.model import QRNNLangModel
+from QRNNLM.utils import convert, ThresholdTrigger
+from QRNNLM.data_processor import DataProcessor
+from QRNNLM.classifier import RecNetClassifier
+from QRNNLM.iterator import ParallelSequentialIterator
+from QRNNLM.updater import BPTTUpdater
 
 def set_random_seed(seed):
     # set Python random seed
@@ -31,6 +31,7 @@ def main(args):
     # use same seed
     set_random_seed(0)
 
+    # create output dir
     start_time = datetime.now().strftime('%m%d_%H_%M_%S')
     dest = os.path.join("../result/", start_time)
     os.makedirs(dest)
@@ -58,9 +59,9 @@ def main(args):
         model.to_gpu()
 
     # setup optimizer
-    optimizer = O.SGD(lr=1.0)
+    optimizer = O.SGD(lr=args.lr)
     optimizer.setup(model)
-    optimizer.add_hook(chainer.optimizer.GradientClipping(10))
+    optimizer.add_hook(chainer.optimizer.GradientClipping(args.clipping))
     optimizer.add_hook(chainer.optimizer.WeightDecay(args.decay))
 
     # create iterators from loaded data
@@ -124,6 +125,8 @@ if __name__ == '__main__':
                         default=10, help='Hidden dim')
     parser.add_argument('--bproplen', type=int,
                         default=105, help='Backprop Length for BPTT')
+    parser.add_argument('--clipping', type=int,
+                        default=10, help='GradientClipping Threshold')
     args = parser.parse_args()
 
     main(args)
