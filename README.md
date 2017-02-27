@@ -40,5 +40,29 @@ For computing the perplexity with the test set, use `eval_qrnn.py`
 python eval_qrnn.py --model-path <path_to_trained_model> --config-path <path_to_settings.json>
 ```
 
-## Result
-TBA
+## Experiment
+### Task
+Language modeling on MikolovPTB
+
+### Hyper-Parameters
+|                    | LSTM   | QRNN   |
+|--------------------|--------|--------|
+| Number of Layers   | 2      | 2      |
+| Hidden Layer Units | 640    | 640    |
+| Dropout            | 0.5    | 0.5    |
+| Zoneout            | No     | No     |
+| Weight Decay       | 0.0002 | 0.0002 |
+| GradientClipping   | 5      | 10     |
+| Epoch              | 100    | 100    |
+| Batchsize          | 20     | 20     |
+| BPTT length        | 35     | 105    |
+
+### Result
+![](./images/perplexity.png)
+
+|      | Dev   | Test  |
+|------|-------|-------|
+| LSTM | 84.99 | 81.87 |
+| QRNN | 85.12 | 81.75 |
+
+On my experiment, LSTM performed better than QRNN.
